@@ -1,0 +1,99 @@
+---
+pages:
+  - name: Home
+    columns:
+      - size: small
+        widgets:
+          - type: calendar
+
+          - type: rss
+            limit: 10
+            collapse-after: 3
+            cache: 3h
+            feeds:
+              - url: https://ciechanow.ski/atom.xml
+              - url: https://www.joshwcomeau.com/rss.xml
+                title: Josh Comeau
+              - url: https://samwho.dev/rss.xml
+              - url: https://awesomekling.github.io/feed.xml
+              - url: https://ishadeed.com/feed.xml
+                title: Ahmad Shadeed
+
+          - type: repository
+            repository: qemu/qemu
+            pull-requests-limit: 5
+            issues-limit: 3
+            commits-limit: 3
+
+      - size: full
+        widgets:
+          - type: hacker-news
+
+          - type: videos
+            channels:
+              - UCsnGwSIHyoYN0kiINAGUKxg   # Wolfgang's Channel
+              - UCv6J_jJa8GJqFwQNgNrMuww   # ServeTheHome
+              - UCOk-gHyjcWZNj3Br4oxwh0A   # Techno Tim
+
+          - type: reddit
+            subreddit: selfhosted
+
+      - size: small
+        widgets:
+          - type: weather
+            location: Seltz, France
+
+          - type: stocks
+            stocks:
+              - symbol: IBM
+                name: IBM
+              - symbol: BTC-USD
+                name: Bitcoin
+              - symbol: NVDA
+                name: NVIDIA
+              - symbol: AAPL
+                name: Apple
+              - symbol: MSFT
+                name: Microsoft
+              - symbol: GOOGL
+                name: Google
+              - symbol: AMD
+                name: AMD
+
+  - name: Kepler
+    columns:
+      - size: full
+        widgets:
+          - type: repository
+            repository: sustainable-computing-io/kepler
+            pull-requests-limit: 5
+            issues-limit: 5
+            commits-limit: 5
+
+          - type: releases
+            repositories:
+              - sustainable-computing-io/kepler
+
+  - name: Grout
+    columns:
+      - size: full
+        widgets:
+          - type: repository
+            repository: dpdk/grout
+            pull-requests-limit: 5
+            issues-limit: 5
+            commits-limit: 5
+
+  - name: Glance
+    columns:
+      - size: full
+        widgets:
+          - type: repository
+            repository: glanceapp/glance
+            pull-requests-limit: 5
+            issues-limit: 5
+            commits-limit: 5
+
+          - type: releases
+            repositories:
+              - glanceapp/glance
