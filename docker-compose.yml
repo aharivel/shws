@@ -4,7 +4,10 @@ services:
   mqtt-server:
     image: mochimqtt/server
     container_name: mqtt-server
-    network_mode: host
+    ports:
+      - "1883:1883"
+    networks:
+      - monitoring
     volumes:
       - ./mqtt/config.yaml:/config.yaml
     restart: unless-stopped
@@ -15,6 +18,8 @@ services:
       context: .
     ports:
       - "8888:8888"
+    networks:
+      - monitoring
     restart: unless-stopped
 
   cadvisor:
@@ -22,7 +27,8 @@ services:
     image: gcr.io/cadvisor/cadvisor:v0.49.1
     restart: unless-stopped
     privileged: true
-    network_mode: host
+    networks:
+      - monitoring
     command:
       - '-housekeeping_interval=15s'
       - '-docker_only=true'
@@ -43,7 +49,8 @@ services:
     command:
       - '--path.rootfs=/host'
     pid: host
-    network_mode: host
+    networks:
+      - monitoring
     restart: unless-stopped
     volumes:
       - '/:/host:ro,rslave'
@@ -52,7 +59,8 @@ services:
     image: prom/prometheus
     user: "1000:1000"
     container_name: prometheus
-    network_mode: host 
+    networks:
+      - monitoring
     volumes:
       - /mnt/usb/prometheus/prometheus/:/prometheus
       - ./prometheus/config/prometheus.yml:/etc/prometheus/prometheus.yml
@@ -66,6 +74,8 @@ services:
     container_name: grafana
     ports:
       - "3005:3000"
+    networks:
+      - monitoring
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
@@ -82,9 +92,26 @@ services:
       - '80:80'
       - '81:81'
       - '443:443'
+    networks:
+      - monitoring
     volumes:
       - ./nginx/data:/data
       - ./nginx/letsencrypt:/etc/letsencrypt
 
+  glance:
+    container_name: glance
+    image: glanceapp/glance
+    restart: unless-stopped
+    volumes:
+      - ./glance-config:/app/config
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - 8080:8080
+
 volumes:
   grafana-storage:
+
+networks:
+  monitoring:
+    driver: bridge
+

@@ -6,12 +6,20 @@ pages:
         widgets:
           - type: calendar
 
+          - type: custom-api
+            title: Random Fact
+            cache: 6h
+            url: https://uselessfacts.jsph.pl/api/v2/facts/random
+            template: |
+              <p class="size-h4 color-paragraph">{{ .JSON.String "text" }}</p>
+
           - type: rss
             limit: 10
             collapse-after: 3
             cache: 3h
             feeds:
-              - url: https://ciechanow.ski/atom.xml
+              - url: https://itguyeric.com/feed/
+                title: The IT guy
               - url: https://www.joshwcomeau.com/rss.xml
                 title: Josh Comeau
               - url: https://samwho.dev/rss.xml
@@ -27,6 +35,9 @@ pages:
 
       - size: full
         widgets:
+          - type: docker-containers
+            hide-by-default: false
+
           - type: hacker-news
 
           - type: videos
@@ -35,8 +46,23 @@ pages:
               - UCv6J_jJa8GJqFwQNgNrMuww   # ServeTheHome
               - UCOk-gHyjcWZNj3Br4oxwh0A   # Techno Tim
 
-          - type: reddit
-            subreddit: selfhosted
+          - type: custom-api
+            title: Steam Specials
+            cache: 12h
+            url: https://store.steampowered.com/api/featuredcategories?cc=fr
+            template: |
+              <ul class="list list-gap-10 collapsible-container" data-collapse-after="5">
+              {{ range .JSON.Array "specials.items" }}
+                <li>
+                  <a class="size-h4 color-highlight block text-truncate" href="https://store.steampowered.com/app/{{ .Int "id" }}/">{{ .String "name" }}</a>
+                  <ul class="list-horizontal-text">
+                    <li>{{ div (.Int "final_price" | toFloat) 100 | printf "$%.2f" }}</li>
+                    {{ $discount := .Int "discount_percent" }}
+                    <li{{ if ge $discount 40 }} class="color-positive"{{ end }}>{{ $discount }}% off</li>
+                  </ul>
+                </li>
+              {{ end }}
+              </ul>
 
       - size: small
         widgets:
@@ -59,6 +85,8 @@ pages:
                 name: Google
               - symbol: AMD
                 name: AMD
+              - symbol: TSLA
+                name: Tesla
 
   - name: Kepler
     columns:
@@ -97,3 +125,25 @@ pages:
           - type: releases
             repositories:
               - glanceapp/glance
+  
+  - name: Reddit
+    width: wide
+    columns:
+      - size: full
+        widgets:
+          - type: split-column
+            max-columns: 4
+            widgets:
+              - type: reddit
+                subreddit: selfhosted
+                collapse-after: 15
+              - type: reddit
+                subreddit: homelab
+                collapse-after: 15
+              - type: reddit
+                subreddit: linux
+                collapse-after: 15
+              - type: reddit
+                subreddit: sysadmin
+                collapse-after: 15
+

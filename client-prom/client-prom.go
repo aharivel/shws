@@ -39,7 +39,7 @@ func main() {
 	prometheus.MustRegister(temperatureGauge)
 
 	// MQTT broker and topic configuration
-	broker := "tcp://192.168.1.27:1883" // Replace with your MQTT broker URL
+	broker := "tcp://mqtt-server:1883" // Replace with your MQTT broker URL
 	clientID := "shelly-mqtt-prometheus"
 	topics := []string{
 		"shellyplusuni/status/temperature:100",

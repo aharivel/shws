@@ -8,17 +8,13 @@ scrape_configs:
         
   - job_name: 'node_exporter'
     static_configs:
-      - targets: ['localhost:9100']
-
-  - job_name: 'docker'
-    static_configs:
-      - targets: ["localhost:9323"]
+      - targets: ['node_exporter:9100']
 
   - job_name: 'cAdvisor'
     static_configs:
-      - targets: ["localhost:8080"]
+      - targets: ["cadvisor:8080"]
 
   - job_name: 'mqtt_client'
     scrape_interval: 5m
     static_configs:
-      - targets: ["localhost:8888"]
+      - targets: ["mqtt-prometheus:8888"]
