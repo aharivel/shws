@@ -15,11 +15,26 @@ services:
   mqtt-prometheus:
     image: mqtt-prometheus-app
     build:
-      context: .
+      context: client-prom
     ports:
       - "8888:8888"
     networks:
       - monitoring
+    environment:
+      - MQTT_BROKER_URL=tcp://mqtt-server:1883
+      - MQTT_TOPICS=shellyplusuni/status/temperature:100,shellyplusuni/status/temperature:101
+      - METRICS_PORT=8888
+      - MQTT_CLIENT_ID=shelly-mqtt-prometheus
+      - RECONNECT_DELAY_SECONDS=5
+      - MAX_RECONNECT_DELAY_SECONDS=60
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      - mqtt-server
     restart: always
 
   cadvisor:
