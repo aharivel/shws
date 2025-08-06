@@ -51,15 +51,17 @@ make mqtt           # Add IoT/weather station support
 | **network** | Pi-hole + Nginx Proxy Manager | DNS filtering + SSL management | `make network` |
 | **apps** | Glance | Dashboard applications | `make apps` |
 | **mqtt** | MQTT Server + Bridge | IoT & weather station data | `make mqtt` |
+| **cicd** | GitLab + GitLab Runners | Version control & CI/CD pipelines | `make cicd` |
 
 ### 📦 **Quick Presets** (`make [preset]`)
 
 | Preset | Description | Includes | Best For |
 |--------|-------------|----------|----------|
 | **homelab-starter** | Basic setup | Observability + Glance | Getting started |
-| **homelab-complete** | Full homelab | All except IoT/MQTT | Complete home server |
+| **homelab-complete** | Full homelab | All except IoT/MQTT/CI/CD | Complete home server |
+| **cicd-dev** | Development env | Observability + CI/CD | Software development |
 | **weather-station** | IoT focused | Observability + MQTT | Sensor monitoring |
-| **iot-complete** | Everything | All services | Full-featured setup |
+| **iot-complete** | Everything | All services including CI/CD | Full-featured setup |
 
 ---
 
@@ -80,6 +82,10 @@ make mqtt           # Add IoT/weather station support
 | Nginx Proxy | http://localhost:8084 | SSL/Proxy mgmt | **Safe: 8084 ≠ 8080** |
 | **🟣 Applications** ||||
 | Glance | http://localhost:8085 | System overview | **Safe: 8085 ≠ 8080** |
+| **🚀 CI/CD Services** ||||
+| GitLab | http://localhost:8086 | Git repos & CI/CD | **Safe: 8086 ≠ 8080** |
+| GitLab SSH | ssh://git@localhost:2222 | Git over SSH | Custom SSH port |
+| GitLab HTTPS | https://localhost:4433 | Secure web access | Custom HTTPS port |
 | **🔴 IoT Services** ||||
 | MQTT Metrics | http://localhost:8888 | Sensor health/metrics | Weather station only |
 | MQTT Server | localhost:1883 | IoT message broker | TCP connection |
@@ -107,6 +113,10 @@ make network
 # 4. Add applications
 make apps
 # Access: +Glance (8085)
+
+# 5. Add CI/CD services
+make cicd
+# Access: +GitLab (8086), SSH (2222), HTTPS (4433)
 ```
 
 ### Specific Use Cases
@@ -120,8 +130,11 @@ make grafana-only
 # Weather station with metrics
 make weather-station
 
-# Complete homelab (no IoT)
+# Complete homelab (no IoT/CI/CD)
 make homelab-complete
+
+# Development environment with GitLab CI/CD
+make cicd-dev
 ```
 
 ### Development & Testing
@@ -137,6 +150,12 @@ make clean
 
 # Development mode with live reload
 make dev-observability
+
+# Setup GitLab runners after GitLab starts
+make gitlab-setup
+
+# Manual GitLab runner setup
+./scripts/setup-gitlab-runners.sh
 ```
 
 ---
@@ -164,6 +183,13 @@ make dev-observability
 - **MQTT-Prometheus Bridge**: Resilient Go app with automatic reconnection
 - **Arduino Integration**: Weather station with temperature and wind sensors
 
+### 🚀 **CI/CD & Development**
+- **GitLab CE**: Self-hosted Git repositories with web interface
+- **GitLab CI/CD**: Automated pipelines with `.gitlab-ci.yml` support
+- **GitLab Runners**: Multi-runner support for parallel job execution
+- **Docker-in-Docker**: Build and test containerized applications
+- **Runner Cache**: Optional Redis cache for faster build times
+
 ---
 
 ## ⚙️ Configuration
@@ -181,6 +207,13 @@ export RECONNECT_DELAY_SECONDS=5
 - **Web Interface**: http://localhost:8083 (admin/admin)
 - **DNS Server**: Configure devices to use `your-server-ip:5053`
 - **Upstream DNS**: 1.1.1.1, 8.8.8.8 (configurable)
+
+### GitLab Setup
+- **Web Interface**: http://localhost:8086 (root/initialpassword123)
+- **SSH Git Access**: `git clone ssh://git@localhost:2222/username/repo.git`
+- **HTTPS Git Access**: `git clone https://localhost:4433/username/repo.git`
+- **Runner Registration**: Run `make gitlab-setup` after GitLab starts
+- **Multiple Runners**: Use `--profile multi-runner` for parallel jobs
 
 ### Storage Configuration
 - **Prometheus Data**: Persistent on USB drive (`/mnt/usb/prometheus/`)
@@ -231,8 +264,10 @@ homelab-setup/
 ├── docker-compose.network.yml        # Pi-hole + Nginx proxy
 ├── docker-compose.apps.yml           # Applications (Glance)
 ├── docker-compose.mqtt.yml           # IoT/Weather station
+├── docker-compose.ci.yml             # GitLab CI/CD services
 ├── Makefile                          # One-command orchestration
 ├── scripts/setup-usb-storage.sh      # USB storage automation
+├── scripts/setup-gitlab-runners.sh   # GitLab runner registration
 ├── client-prom/                      # Go MQTT bridge
 ├── anemometer/                       # Arduino weather station
 └── prometheus/config/                # Monitoring configuration
@@ -252,6 +287,9 @@ make logs SERVICE=grafana
 # Restart specific service
 docker-compose -f docker-compose.observability.yml restart grafana
 
+# Restart GitLab services
+docker-compose -f docker-compose.ci.yml restart gitlab
+
 # Check storage
 df -h /mnt/usb
 
@@ -264,6 +302,8 @@ make clean && make homelab-complete
 - **DNS conflicts**: Pi-hole uses 5053 instead of 53
 - **Storage issues**: Run `sudo make setup-usb` for USB configuration
 - **Network issues**: Services use shared `homelab` network
+- **GitLab slow start**: Initial startup takes 5-10 minutes, use `make gitlab-setup` to wait
+- **Runner registration**: Get token from GitLab admin panel before running setup script
 
 ---
 

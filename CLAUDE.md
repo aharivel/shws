@@ -67,26 +67,38 @@ go mod tidy
 # Show all available commands and safe port assignments
 make help
 
-# Core weather station only (MQTT + Prometheus + Grafana)
-make core
+# Core observability stack
+make observability    # Prometheus + Grafana + Perses
 
-# Add system monitoring (cAdvisor + Node Exporter + Perses)
-make monitoring
+# Add system monitoring
+make monitoring      # + cAdvisor + Node Exporter
 
-# Add network services (Pi-hole + Nginx Proxy Manager)
-make network
+# Add network services
+make network         # Pi-hole + Nginx Proxy Manager
 
-# Add applications (Glance dashboard)
-make apps
+# Add applications
+make apps           # Glance dashboard
+
+# Add CI/CD services
+make cicd           # GitLab + GitLab Runners
 
 # Deploy complete stack
-make full
+make full           # Everything including CI/CD
+
+# Quick presets
+make homelab-starter    # Observability + Apps
+make homelab-complete   # Everything except IoT
+make cicd-dev          # Observability + CI/CD
+make iot-complete      # Full stack with weather station
 
 # Individual services
 make glance-only      # Just Glance dashboard
 make prometheus-only  # Just Prometheus
 make perses-only     # Just Perses dashboard
 make pihole-only     # Just Pi-hole
+
+# GitLab management
+make gitlab-setup    # Configure runners after GitLab starts
 
 # Infrastructure setup
 make setup-usb       # Configure USB storage + fstab
@@ -137,6 +149,11 @@ podman-compose up -d  # For CentOS/RHEL
 **Applications:**
 - **Glance Dashboard**: 8085 (SAFE: avoids LVDA on 8080)
 
+**CI/CD Services:**
+- **GitLab Web**: 8086 (SAFE: avoids LVDA on 8080)
+- **GitLab HTTPS**: 4433 (mapped from 443)
+- **GitLab SSH**: 2222 (mapped from 22)
+
 **⚠️ PROTECTED PORTS (LVDA Services):**
 - **8080**: LVDA Frontend (DO NOT USE)
 - **3001**: LVDA Backend (DO NOT USE)
@@ -166,14 +183,26 @@ sudo firewall-cmd --reload
 - `client-prom/client-prom.go:166`: MQTT client connection logic with reconnection handling
 - `client-prom/client-prom.go:242`: Health check endpoint implementation
 - `anemometer/anemometer_v3.ino:54`: Main sensor reading loop
+- `docker-compose.ci.yml`: GitLab CI/CD services with LVDA-safe port assignments
 - `docker-compose.yml`: Complete service orchestration (Podman compatible)
 - `prometheus/config/prometheus.yml`: Prometheus scrape configuration
+- `Makefile`: Modular deployment system with safe port management
 
 ## Message Flow
 
+### IoT/Weather Station Flow
 1. Arduino sensor publishes temperature/wind data to MQTT topics
 2. Go bridge subscribes to MQTT topics and parses JSON messages
 3. Bridge exposes temperature data as Prometheus metrics on `/metrics`
 4. Prometheus scrapes metrics every 5 minutes from the bridge
 5. Grafana visualizes data from Prometheus
 6. Health status available at `/health` endpoint
+
+### CI/CD Flow
+1. Code pushed to GitLab repository (http://localhost:8086)
+2. GitLab CI triggers pipeline based on `.gitlab-ci.yml`
+3. GitLab Runners execute jobs in Docker containers
+4. Runners can access both Docker host and GitLab services
+5. Pipeline results visible in GitLab web interface
+6. Artifacts and logs stored in GitLab
+7. Optional: GitLab Runner cache (Redis) speeds up builds

@@ -4,7 +4,7 @@
 # LVDA Frontend: 8080 (PROTECTED)
 # LVDA Backend: 3001 (PROTECTED)
 
-.PHONY: help observability monitoring network apps mqtt full setup-usb clean logs status
+.PHONY: help observability monitoring network apps mqtt cicd full setup-usb clean logs status gitlab-setup
 
 # Default target
 help: ## Show this help message
@@ -24,6 +24,7 @@ help: ## Show this help message
 	@echo "  Nginx Proxy:   http://localhost:8084  (SAFE: 8080 avoided)"
 	@echo "  Glance:        http://localhost:8085  (SAFE: 8080 avoided)"
 	@echo "  MQTT Metrics:  http://localhost:8888  (Weather station only)"
+	@echo "  GitLab:        http://localhost:8086  (SAFE: 8080 avoided)"
 
 # Core homelab stacks
 observability: ## Start observability stack (Prometheus + Grafana + Perses)
@@ -63,10 +64,42 @@ mqtt: ## Add MQTT services for IoT/Weather Station
 	@echo "   - MQTT Server: localhost:1883"
 	@echo "   - MQTT Metrics: http://localhost:8888"
 
+# CI/CD Services
+cicd: ## Add CI/CD services (GitLab + GitLab Runner)
+	@echo "🚀 Adding CI/CD services (GitLab + Runner)..."
+	@docker-compose -f docker-compose.ci.yml up -d
+	@echo "✅ CI/CD services running:"
+	@echo "   - GitLab: http://localhost:8086 (SAFE: avoids LVDA on 8080)"
+	@echo "   - SSH Git: ssh://git@localhost:2222"
+	@echo "   - Initial root password: initialpassword123"
+	@echo ""
+	@echo "🔧 Next steps:"
+	@echo "   1. Access GitLab at http://localhost:8086"
+	@echo "   2. Login with root/initialpassword123"
+	@echo "   3. Run 'make gitlab-setup' to configure runners"
+
+gitlab-setup: ## Configure GitLab runners (run after GitLab is ready)
+	@echo "🏃 Setting up GitLab runners..."
+	@echo "⏳ Waiting for GitLab to be ready..."
+	@timeout 300 bash -c 'until docker exec gitlab-ce gitlab-rails runner "puts \"GitLab is ready\"" 2>/dev/null; do sleep 5; done'
+	@echo "✅ GitLab is ready!"
+	@echo ""
+	@echo "📝 To register runners, get the registration token from:"
+	@echo "   http://localhost:8086/admin/runners"
+	@echo ""
+	@echo "Then run these commands:"
+	@echo "   docker exec -it gitlab-runner-1 gitlab-runner register"
+	@echo "   docker exec -it gitlab-runner-2 gitlab-runner register  # (optional second runner)"
+	@echo ""
+	@echo "🔧 Runner configuration:"
+	@echo "   - URL: http://gitlab:80"
+	@echo "   - Executor: docker"
+	@echo "   - Default image: alpine:latest"
+
 # Full stack deployments
-full: ## Deploy complete homelab stack (all services)
+full: ## Deploy complete homelab stack (all services including CI/CD)
 	@echo "🚀 Deploying complete homelab stack..."
-	@docker-compose -f docker-compose.observability.yml -f docker-compose.monitoring.yml -f docker-compose.network.yml -f docker-compose.apps.yml -f docker-compose.mqtt.yml up -d
+	@docker-compose -f docker-compose.observability.yml -f docker-compose.monitoring.yml -f docker-compose.network.yml -f docker-compose.apps.yml -f docker-compose.mqtt.yml -f docker-compose.ci.yml up -d
 	@echo "✅ Full homelab stack deployed! All services running with LVDA-safe ports."
 
 homelab-essentials: ## Deploy recommended homelab core (observability + monitoring + network)
@@ -118,14 +151,14 @@ setup-usb: ## Configure USB storage and update fstab
 
 clean: ## Stop and remove all containers
 	@echo "🧹 Cleaning up all services..."
-	@docker-compose -f docker-compose.observability.yml -f docker-compose.monitoring.yml -f docker-compose.network.yml -f docker-compose.apps.yml -f docker-compose.mqtt.yml down
+	@docker-compose -f docker-compose.observability.yml -f docker-compose.monitoring.yml -f docker-compose.network.yml -f docker-compose.apps.yml -f docker-compose.mqtt.yml -f docker-compose.ci.yml down
 	@echo "✅ All services stopped"
 
 clean-volumes: ## Remove all volumes (WARNING: Data loss!)
 	@echo "⚠️  WARNING: This will remove all data volumes!"
 	@read -p "Are you sure? [y/N] " -n 1 -r; echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		docker-compose -f docker-compose.observability.yml -f docker-compose.monitoring.yml -f docker-compose.network.yml -f docker-compose.apps.yml -f docker-compose.mqtt.yml down -v; \
+		docker-compose -f docker-compose.observability.yml -f docker-compose.monitoring.yml -f docker-compose.network.yml -f docker-compose.apps.yml -f docker-compose.mqtt.yml -f docker-compose.ci.yml down -v; \
 		echo "✅ All volumes removed"; \
 	else \
 		echo "❌ Operation cancelled"; \
@@ -140,13 +173,13 @@ create-network: ## Create shared homelab network
 # Monitoring and logs
 status: ## Show status of all services
 	@echo "📊 Service Status:"
-	@docker-compose -f docker-compose.observability.yml -f docker-compose.monitoring.yml -f docker-compose.network.yml -f docker-compose.apps.yml -f docker-compose.mqtt.yml ps
+	@docker-compose -f docker-compose.observability.yml -f docker-compose.monitoring.yml -f docker-compose.network.yml -f docker-compose.apps.yml -f docker-compose.mqtt.yml -f docker-compose.ci.yml ps
 
 logs: ## Show logs for all services (or specific: make logs SERVICE=prometheus)
 ifdef SERVICE
-	@docker-compose -f docker-compose.observability.yml -f docker-compose.monitoring.yml -f docker-compose.network.yml -f docker-compose.apps.yml -f docker-compose.mqtt.yml logs -f $(SERVICE)
+	@docker-compose -f docker-compose.observability.yml -f docker-compose.monitoring.yml -f docker-compose.network.yml -f docker-compose.apps.yml -f docker-compose.mqtt.yml -f docker-compose.ci.yml logs -f $(SERVICE)
 else
-	@docker-compose -f docker-compose.observability.yml -f docker-compose.monitoring.yml -f docker-compose.network.yml -f docker-compose.apps.yml -f docker-compose.mqtt.yml logs -f
+	@docker-compose -f docker-compose.observability.yml -f docker-compose.monitoring.yml -f docker-compose.network.yml -f docker-compose.apps.yml -f docker-compose.mqtt.yml -f docker-compose.ci.yml logs -f
 endif
 
 # Quick deployment presets
@@ -160,6 +193,12 @@ homelab-complete: create-network homelab-essentials apps ## Complete homelab wit
 
 iot-complete: create-network full ## Complete setup including IoT/Weather Station
 	@echo "🌡️  Complete IoT homelab deployed!"
+
+# CI/CD focused presets
+cicd-dev: create-network observability cicd ## Development environment with CI/CD
+	@echo "🚀 Development environment with CI/CD deployed!"
+	@echo "   - Grafana for monitoring your CI/CD pipelines"
+	@echo "   - GitLab for version control and CI/CD"
 
 # Development helpers
 dev-observability: create-network ## Development mode - observability with live reload

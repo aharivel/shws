@@ -1,0 +1,106 @@
+version: '3.8'
+
+services:
+  gitlab:
+    image: gitlab/gitlab-ce:latest
+    container_name: gitlab-ce
+    hostname: gitlab.local
+    ports:
+      - "8086:80"      # SAFE: Avoids LVDA on 8080
+      - "4433:443"     # HTTPS
+      - "2222:22"      # SSH Git operations
+    networks:
+      - cicd
+    volumes:
+      - gitlab-config:/etc/gitlab
+      - gitlab-logs:/var/log/gitlab
+      - gitlab-data:/var/opt/gitlab
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://gitlab.local:8086'
+        gitlab_rails['gitlab_shell_ssh_port'] = 2222
+        gitlab_rails['initial_root_password'] = 'initialpassword123'
+        gitlab_rails['gitlab_signup_enabled'] = false
+        gitlab_rails['time_zone'] = 'UTC'
+        # Disable heavy monitoring features (we have our own stack)
+        prometheus_monitoring['enable'] = false
+        alertmanager['enable'] = false
+        node_exporter['enable'] = false
+        redis_exporter['enable'] = false
+        postgres_exporter['enable'] = false
+        gitlab_exporter['enable'] = false
+        grafana['enable'] = false
+        # Performance optimizations for experimentation
+        postgresql['shared_buffers'] = "128MB"
+        postgresql['max_worker_processes'] = "2"
+        puma['worker_processes'] = 2
+        sidekiq['max_concurrency'] = 5
+    restart: always
+    shm_size: '256m'
+    healthcheck:
+      test: ["CMD-SHELL", "gitlab-healthcheck --fail --max-time 10"]
+      interval: 60s
+      timeout: 30s
+      retries: 5
+      start_period: 10m
+
+  gitlab-runner:
+    image: gitlab/gitlab-runner:latest
+    container_name: gitlab-runner-1
+    networks:
+      - cicd
+    volumes:
+      - gitlab-runner-config:/etc/gitlab-runner
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    restart: always
+    depends_on:
+      gitlab:
+        condition: service_healthy
+    
+  # Optional: Additional runner for parallel jobs
+  gitlab-runner-2:
+    image: gitlab/gitlab-runner:latest
+    container_name: gitlab-runner-2
+    networks:
+      - cicd
+    volumes:
+      - gitlab-runner-2-config:/etc/gitlab-runner
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    restart: always
+    depends_on:
+      gitlab:
+        condition: service_healthy
+    profiles:
+      - multi-runner
+    
+  # Optional: Redis cache for GitLab Runner (shared cache)
+  gitlab-runner-cache:
+    image: redis:7-alpine
+    container_name: gitlab-runner-cache
+    networks:
+      - cicd
+    restart: always
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    profiles:
+      - cache
+
+volumes:
+  gitlab-config:
+    driver: local
+  gitlab-logs:
+    driver: local
+  gitlab-data:
+    driver: local
+  gitlab-runner-config:
+    driver: local
+  gitlab-runner-2-config:
+    driver: local
+
+networks:
+  cicd:
+    name: gitlab-cicd
+    driver: bridge
