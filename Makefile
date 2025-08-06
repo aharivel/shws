@@ -4,8 +4,8 @@
 # LVDA Frontend: 8080 (PROTECTED)
 # LVDA Backend: 3001 (PROTECTED)
 
-# Container orchestration - auto-detect podman-compose vs $(COMPOSE)
-COMPOSE := $(shell command -v podman-compose 2>/dev/null || command -v $(COMPOSE) 2>/dev/null)
+# Container orchestration - auto-detect podman-compose vs docker-compose
+COMPOSE := $(shell command -v podman-compose 2>/dev/null || command -v docker-compose 2>/dev/null)
 
 .PHONY: help observability monitoring network apps mqtt cicd full setup-usb clean logs status gitlab-setup
 
@@ -46,7 +46,7 @@ monitoring: observability ## Add system monitoring (cAdvisor + Node Exporter)
 	@echo "   - cAdvisor: http://localhost:8081 (SAFE: avoids LVDA on 8080)"
 	@echo "   - Node Exporter: http://localhost:9100"
 
-network: ## Add network services (Pi-hole + Nginx Proxy Manager)
+network: create-network ## Add network services (Pi-hole + Nginx Proxy Manager)
 	@echo "🌐 Adding network services..."
 	@$(COMPOSE) -f docker-compose.network.yml up -d
 	@echo "✅ Network services running:"
@@ -54,7 +54,7 @@ network: ## Add network services (Pi-hole + Nginx Proxy Manager)
 	@echo "   - Pi-hole DNS: localhost:5053 (SAFE: avoids system DNS on 53)"
 	@echo "   - Nginx Proxy: http://localhost:8084 (SAFE: avoids LVDA on 8080)"
 
-apps: ## Add application services (Glance dashboard)
+apps: create-network ## Add application services (Glance dashboard)
 	@echo "📱 Adding application services..."
 	@$(COMPOSE) -f docker-compose.apps.yml up -d
 	@echo "✅ Application services running:"
@@ -69,7 +69,7 @@ mqtt: ## Add MQTT services for IoT/Weather Station
 	@echo "   - MQTT Metrics: http://localhost:8888"
 
 # CI/CD Services
-cicd: ## Add CI/CD services (GitLab + GitLab Runner)
+cicd: create-network ## Add CI/CD services (GitLab + GitLab Runner)
 	@echo "🚀 Adding CI/CD services (GitLab + Runner)..."
 	@$(COMPOSE) -f docker-compose.ci.yml up -d
 	@echo "✅ CI/CD services running:"
