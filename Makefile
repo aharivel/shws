@@ -19,16 +19,16 @@ help: ## Show this help message
 	@echo "📋 Available commands:"
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
-	@echo "🔌 Service Access Points:"
-	@echo "  Grafana:       http://localhost:3005"  
-	@echo "  Prometheus:    http://localhost:9090"
-	@echo "  cAdvisor:      http://localhost:8081  (SAFE: 8080 avoided)"
-	@echo "  Perses:        http://localhost:8082  (SAFE: 8080 avoided)" 
-	@echo "  Pi-hole:       http://localhost:8083  (SAFE: 8080 avoided)"
-	@echo "  Nginx Proxy:   http://localhost:8084  (SAFE: 8080 avoided)"
-	@echo "  Glance:        http://localhost:8085  (SAFE: 8080 avoided)"
-	@echo "  MQTT Metrics:  http://localhost:8888  (Weather station only)"
-	@echo "  GitLab:        http://localhost:8086  (SAFE: 8080 avoided)"
+	@echo "🔌 Service Access Points (Headless/Network Ready):"
+	@echo "  Grafana:       http://localhost:3005  | http://$(shell ip route | grep default | awk '{print $$9}' | head -1):3005"  
+	@echo "  Prometheus:    http://localhost:9090  | http://$(shell ip route | grep default | awk '{print $$9}' | head -1):9090"
+	@echo "  cAdvisor:      http://localhost:8081  | http://$(shell ip route | grep default | awk '{print $$9}' | head -1):8081  (SAFE: 8080 avoided)"
+	@echo "  Perses:        http://localhost:8082  | http://$(shell ip route | grep default | awk '{print $$9}' | head -1):8082  (SAFE: 8080 avoided)" 
+	@echo "  Pi-hole:       http://localhost:8083  | http://$(shell ip route | grep default | awk '{print $$9}' | head -1):8083  (SAFE: 8080 avoided)"
+	@echo "  Nginx Proxy:   http://localhost:8084  | http://$(shell ip route | grep default | awk '{print $$9}' | head -1):8084  (SAFE: 8080 avoided)"
+	@echo "  Glance:        http://localhost:8085  | http://$(shell ip route | grep default | awk '{print $$9}' | head -1):8085  (SAFE: 8080 avoided)"
+	@echo "  MQTT Metrics:  http://localhost:8888  | http://$(shell ip route | grep default | awk '{print $$9}' | head -1):8888  (Weather station only)"
+	@echo "  GitLab:        http://localhost:8086  | http://$(shell ip route | grep default | awk '{print $$9}' | head -1):8086  (SAFE: 8080 avoided)"
 
 # Core homelab stacks
 observability: ## Start observability stack (Prometheus + Grafana + Perses)

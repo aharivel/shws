@@ -67,30 +67,33 @@ make mqtt           # Add IoT/weather station support
 
 ## 🔌 Service Access (LVDA-Conflict-Free)
 
-| Service | URL | Purpose | Notes |
-|---------|-----|---------|-------|
-| **🔵 Core Services** ||||
-| Grafana | http://localhost:3005 | Metrics visualization | Login: admin/admin |
-| Prometheus | http://localhost:9090 | Time-series database | Metrics collection |
-| Perses | http://localhost:8082 | GitOps dashboards | **Safe: 8082 ≠ 8080** |
-| **🟡 Monitoring Services** ||||
-| cAdvisor | http://localhost:8081 | Container monitoring | **Safe: 8081 ≠ 8080** |
-| Node Exporter | http://localhost:9100 | Host system metrics | System resources |
-| **🟢 Network Services** ||||
-| Pi-hole | http://localhost:8083 | DNS ad-blocking | **Safe: 8083 ≠ 8080** |
-| Pi-hole DNS | localhost:5053 | DNS server | **Safe: 5053 ≠ 53** |
-| Nginx Proxy | http://localhost:8084 | SSL/Proxy mgmt | **Safe: 8084 ≠ 8080** |
-| **🟣 Applications** ||||
-| Glance | http://localhost:8085 | System overview | **Safe: 8085 ≠ 8080** |
-| **🚀 CI/CD Services** ||||
-| GitLab | http://localhost:8086 | Git repos & CI/CD | **Safe: 8086 ≠ 8080** |
-| GitLab SSH | ssh://git@localhost:2222 | Git over SSH | Custom SSH port |
-| GitLab HTTPS | https://localhost:4433 | Secure web access | Custom HTTPS port |
-| **🔴 IoT Services** ||||
-| MQTT Metrics | http://localhost:8888 | Sensor health/metrics | Weather station only |
-| MQTT Server | localhost:1883 | IoT message broker | TCP connection |
+**🌐 Headless Access**: All services bind to `0.0.0.0` for network access
+
+| Service | Local URL | Network URL | Purpose | Notes |
+|---------|-----------|-------------|---------|-------|
+| **🔵 Core Services** |||||
+| Grafana | http://localhost:3005 | http://192.168.1.139:3005 | Metrics visualization | Login: admin/admin |
+| Prometheus | http://localhost:9090 | http://192.168.1.139:9090 | Time-series database | Metrics collection |
+| Perses | http://localhost:8082 | http://192.168.1.139:8082 | GitOps dashboards | **Safe: 8082 ≠ 8080** |
+| **🟡 Monitoring Services** |||||
+| cAdvisor | http://localhost:8081 | http://192.168.1.139:8081 | Container monitoring | **Safe: 8081 ≠ 8080** |
+| Node Exporter | http://localhost:9100 | http://192.168.1.139:9100 | Host system metrics | System resources |
+| **🟢 Network Services** |||||
+| Pi-hole | http://localhost:8083 | http://192.168.1.139:8083 | DNS ad-blocking | **Safe: 8083 ≠ 8080** |
+| Pi-hole DNS | localhost:5053 | 192.168.1.139:5053 | DNS server | **Safe: 5053 ≠ 53** |
+| Nginx Proxy | http://localhost:8084 | http://192.168.1.139:8084 | SSL/Proxy mgmt | **Safe: 8084 ≠ 8080** |
+| **🟣 Applications** |||||
+| Glance | http://localhost:8085 | http://192.168.1.139:8085 | System overview | **Safe: 8085 ≠ 8080** |
+| **🚀 CI/CD Services** |||||
+| GitLab | http://localhost:8086 | http://192.168.1.139:8086 | Git repos & CI/CD | **Safe: 8086 ≠ 8080** |
+| GitLab SSH | ssh://git@localhost:2222 | ssh://git@192.168.1.139:2222 | Git over SSH | Custom SSH port |
+| GitLab HTTPS | https://localhost:4433 | https://192.168.1.139:4433 | Secure web access | Custom HTTPS port |
+| **🔴 IoT Services** |||||
+| MQTT Metrics | http://localhost:8888 | http://192.168.1.139:8888 | Sensor health/metrics | Weather station only |
+| MQTT Server | localhost:1883 | 192.168.1.139:1883 | IoT message broker | TCP connection |
 
 **🛡️ Protected Ports**: 8080 (LVDA Frontend), 3001 (LVDA Backend) - **Never used**
+**🌐 Network Access**: Replace `192.168.1.139` with your server's IP address
 
 ---
 
