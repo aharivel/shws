@@ -62,17 +62,44 @@ go mod download
 go mod tidy
 ```
 
-### Full Stack Deployment
+### Modular Deployment (RECOMMENDED)
 ```bash
-# Docker Compose
-docker-compose up -d
-docker-compose up --build
-docker-compose logs -f mqtt-prometheus
+# Show all available commands and safe port assignments
+make help
 
-# Podman Compose (CentOS/RHEL)
-podman-compose up -d
-podman-compose up --build
-podman-compose logs -f mqtt-prometheus
+# Core weather station only (MQTT + Prometheus + Grafana)
+make core
+
+# Add system monitoring (cAdvisor + Node Exporter + Perses)
+make monitoring
+
+# Add network services (Pi-hole + Nginx Proxy Manager)
+make network
+
+# Add applications (Glance dashboard)
+make apps
+
+# Deploy complete stack
+make full
+
+# Individual services
+make glance-only      # Just Glance dashboard
+make prometheus-only  # Just Prometheus
+make perses-only     # Just Perses dashboard
+make pihole-only     # Just Pi-hole
+
+# Infrastructure setup
+make setup-usb       # Configure USB storage + fstab
+make clean          # Stop all services
+make status         # Show service status
+make logs SERVICE=prometheus  # View specific service logs
+```
+
+### Traditional Docker Compose (Legacy)
+```bash
+# Full stack (all services) - use only if you need everything
+docker-compose up -d
+podman-compose up -d  # For CentOS/RHEL
 ```
 
 ### Arduino Development
@@ -90,13 +117,29 @@ podman-compose logs -f mqtt-prometheus
 - `RECONNECT_DELAY_SECONDS`: Initial reconnection delay (default: 5)
 - `MAX_RECONNECT_DELAY_SECONDS`: Maximum reconnection delay (default: 60)
 
-### Service Ports
+### Service Ports (LVDA-Conflict Safe)
+**Core Services:**
 - **MQTT Broker**: 1883 (TCP), 1882 (WebSocket), 1880 (System Info)
 - **Prometheus Metrics**: 8888 (Go application)
 - **Prometheus Server**: 9090
 - **Grafana**: 3005 (mapped from 3000)
-- **cAdvisor**: 8080
+
+**Monitoring Stack:**
 - **Node Exporter**: 9100
+- **cAdvisor**: 8081 (SAFE: avoids LVDA on 8080)
+- **Perses Dashboard**: 8082 (SAFE: avoids LVDA on 8080)
+
+**Network Services:**
+- **Pi-hole Web**: 8083 (SAFE: avoids LVDA on 8080)
+- **Pi-hole DNS**: 5053 (SAFE: avoids system DNS on 53)
+- **Nginx Proxy Manager**: 8084 (SAFE: avoids LVDA on 8080)
+
+**Applications:**
+- **Glance Dashboard**: 8085 (SAFE: avoids LVDA on 8080)
+
+**⚠️ PROTECTED PORTS (LVDA Services):**
+- **8080**: LVDA Frontend (DO NOT USE)
+- **3001**: LVDA Backend (DO NOT USE)
 
 ## CentOS/Podman Compatibility
 

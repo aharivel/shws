@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # Pi-hole DNS Server with SAFE port assignments
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+    ports:
+      - "5053:53/tcp"      # SAFE: Custom DNS port to avoid system conflict
+      - "5053:53/udp"      # SAFE: Custom DNS port to avoid system conflict  
+      - "8083:80/tcp"      # SAFE: Avoid conflict with LVDA on 8080
+    networks:
+      - homelab
+    environment:
+      - TZ=Europe/Paris
+      - WEBPASSWORD=admin
+      - FTLCONF_LOCAL_IPV4=192.168.1.27  # Adjust to your machine IP
+      - PIHOLE_DNS_=1.1.1.1;8.8.8.8
+    volumes:
+      - pihole-etc:/etc/pihole
+      - pihole-dnsmasq:/etc/dnsmasq.d
+    cap_add:
+      - NET_ADMIN
+    restart: always
+
+  # Nginx Proxy Manager for reverse proxy
+  nginxproxymanager:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: nginxproxymanager
+    restart: always
+    ports:
+      - '8084:81'   # SAFE: Admin interface, avoid LVDA conflicts
+      - '443:443'   # HTTPS
+      # Note: Port 80 avoided to prevent conflicts
+    networks:
+      - homelab
+    volumes:
+      - ./nginx/data:/data
+      - ./nginx/letsencrypt:/etc/letsencrypt
+
+volumes:
+  pihole-etc:
+  pihole-dnsmasq:
+
+networks:
+  homelab:
+    external: true
