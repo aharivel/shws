@@ -4,12 +4,16 @@
 # LVDA Frontend: 8080 (PROTECTED)
 # LVDA Backend: 3001 (PROTECTED)
 
+# Container orchestration - auto-detect podman-compose vs $(COMPOSE)
+COMPOSE := $(shell command -v podman-compose 2>/dev/null || command -v $(COMPOSE) 2>/dev/null)
+
 .PHONY: help observability monitoring network apps mqtt cicd full setup-usb clean logs status gitlab-setup
 
 # Default target
 help: ## Show this help message
 	@echo "🏠 Homelab Quick Setup - Modular Self-Hosted Services"
 	@echo ""
+	@echo "🐳 Using: $(COMPOSE)"
 	@echo "⚠️  IMPORTANT: Port assignments avoid conflicts with LVDA (ports 8080, 3001)"
 	@echo ""
 	@echo "📋 Available commands:"
@@ -29,7 +33,7 @@ help: ## Show this help message
 # Core homelab stacks
 observability: ## Start observability stack (Prometheus + Grafana + Perses)
 	@echo "📊 Starting observability stack..."
-	@docker-compose -f docker-compose.observability.yml up -d
+	@$(COMPOSE) -f docker-compose.observability.yml up -d
 	@echo "✅ Observability services running:"
 	@echo "   - Prometheus: http://localhost:9090"
 	@echo "   - Grafana: http://localhost:3005 (admin/admin)"
@@ -37,14 +41,14 @@ observability: ## Start observability stack (Prometheus + Grafana + Perses)
 
 monitoring: observability ## Add system monitoring (cAdvisor + Node Exporter)
 	@echo "📈 Adding system monitoring services..."
-	@docker-compose -f docker-compose.observability.yml -f docker-compose.monitoring.yml up -d
+	@$(COMPOSE) -f docker-compose.observability.yml -f docker-compose.monitoring.yml up -d
 	@echo "✅ Monitoring services added:"
 	@echo "   - cAdvisor: http://localhost:8081 (SAFE: avoids LVDA on 8080)"
 	@echo "   - Node Exporter: http://localhost:9100"
 
 network: ## Add network services (Pi-hole + Nginx Proxy Manager)
 	@echo "🌐 Adding network services..."
-	@docker-compose -f docker-compose.network.yml up -d
+	@$(COMPOSE) -f docker-compose.network.yml up -d
 	@echo "✅ Network services running:"
 	@echo "   - Pi-hole Web: http://localhost:8083 (SAFE: avoids LVDA on 8080)"
 	@echo "   - Pi-hole DNS: localhost:5053 (SAFE: avoids system DNS on 53)"
@@ -52,14 +56,14 @@ network: ## Add network services (Pi-hole + Nginx Proxy Manager)
 
 apps: ## Add application services (Glance dashboard)
 	@echo "📱 Adding application services..."
-	@docker-compose -f docker-compose.apps.yml up -d
+	@$(COMPOSE) -f docker-compose.apps.yml up -d
 	@echo "✅ Application services running:"
 	@echo "   - Glance: http://localhost:8085 (SAFE: avoids LVDA on 8080)"
 
 # IoT/Weather Station specific
 mqtt: ## Add MQTT services for IoT/Weather Station
 	@echo "🌡️  Adding MQTT services for IoT/Weather Station..."
-	@docker-compose -f docker-compose.mqtt.yml up -d
+	@$(COMPOSE) -f docker-compose.mqtt.yml up -d
 	@echo "✅ MQTT services running:"
 	@echo "   - MQTT Server: localhost:1883"
 	@echo "   - MQTT Metrics: http://localhost:8888"
@@ -67,7 +71,7 @@ mqtt: ## Add MQTT services for IoT/Weather Station
 # CI/CD Services
 cicd: ## Add CI/CD services (GitLab + GitLab Runner)
 	@echo "🚀 Adding CI/CD services (GitLab + Runner)..."
-	@docker-compose -f docker-compose.ci.yml up -d
+	@$(COMPOSE) -f docker-compose.ci.yml up -d
 	@echo "✅ CI/CD services running:"
 	@echo "   - GitLab: http://localhost:8086 (SAFE: avoids LVDA on 8080)"
 	@echo "   - SSH Git: ssh://git@localhost:2222"
@@ -99,47 +103,47 @@ gitlab-setup: ## Configure GitLab runners (run after GitLab is ready)
 # Full stack deployments
 full: ## Deploy complete homelab stack (all services including CI/CD)
 	@echo "🚀 Deploying complete homelab stack..."
-	@docker-compose -f docker-compose.observability.yml -f docker-compose.monitoring.yml -f docker-compose.network.yml -f docker-compose.apps.yml -f docker-compose.mqtt.yml -f docker-compose.ci.yml up -d
+	@$(COMPOSE) -f docker-compose.observability.yml -f docker-compose.monitoring.yml -f docker-compose.network.yml -f docker-compose.apps.yml -f docker-compose.mqtt.yml -f docker-compose.ci.yml up -d
 	@echo "✅ Full homelab stack deployed! All services running with LVDA-safe ports."
 
 homelab-essentials: ## Deploy recommended homelab core (observability + monitoring + network)
 	@echo "🏠 Deploying homelab essentials..."
-	@docker-compose -f docker-compose.observability.yml -f docker-compose.monitoring.yml -f docker-compose.network.yml up -d
+	@$(COMPOSE) -f docker-compose.observability.yml -f docker-compose.monitoring.yml -f docker-compose.network.yml up -d
 	@echo "✅ Homelab essentials deployed:"
 	@echo "   - Grafana + Prometheus + System Monitoring + Pi-hole + Proxy"
 
 # Individual service management
 grafana-only: ## Run only Grafana + Prometheus
 	@echo "📊 Starting Grafana + Prometheus only..."
-	@docker-compose -f docker-compose.observability.yml up -d
+	@$(COMPOSE) -f docker-compose.observability.yml up -d
 	@echo "✅ Observability stack available:"
 	@echo "   - Grafana: http://localhost:3005"
 	@echo "   - Prometheus: http://localhost:9090"
 
 glance-only: ## Run only Glance dashboard
 	@echo "📱 Starting Glance dashboard only..."
-	@docker-compose -f docker-compose.apps.yml up -d glance
+	@$(COMPOSE) -f docker-compose.apps.yml up -d glance
 	@echo "✅ Glance available at: http://localhost:8085"
 
 prometheus-only: ## Run only Prometheus
 	@echo "📊 Starting Prometheus only..."
-	@docker-compose -f docker-compose.observability.yml up -d prometheus
+	@$(COMPOSE) -f docker-compose.observability.yml up -d prometheus
 	@echo "✅ Prometheus available at: http://localhost:9090"
 
 perses-only: ## Run only Perses dashboard
 	@echo "📈 Starting Perses dashboard only..."
-	@docker-compose -f docker-compose.monitoring.yml up -d perses
+	@$(COMPOSE) -f docker-compose.monitoring.yml up -d perses
 	@echo "✅ Perses available at: http://localhost:8082"
 
 pihole-only: ## Run only Pi-hole
 	@echo "🕳️  Starting Pi-hole only..."
-	@docker-compose -f docker-compose.network.yml up -d pihole
+	@$(COMPOSE) -f docker-compose.network.yml up -d pihole
 	@echo "✅ Pi-hole available at: http://localhost:8083"
 	@echo "   DNS server: localhost:5053"
 
 weather-station: observability mqtt ## Deploy weather station with observability
 	@echo "🌤️  Deploying weather station setup..."
-	@docker-compose -f docker-compose.observability.yml -f docker-compose.mqtt.yml up -d
+	@$(COMPOSE) -f docker-compose.observability.yml -f docker-compose.mqtt.yml up -d
 	@echo "✅ Weather station deployed:"
 	@echo "   - MQTT + Prometheus + Grafana for sensor monitoring"
 
@@ -151,14 +155,14 @@ setup-usb: ## Configure USB storage and update fstab
 
 clean: ## Stop and remove all containers
 	@echo "🧹 Cleaning up all services..."
-	@docker-compose -f docker-compose.observability.yml -f docker-compose.monitoring.yml -f docker-compose.network.yml -f docker-compose.apps.yml -f docker-compose.mqtt.yml -f docker-compose.ci.yml down
+	@$(COMPOSE) -f docker-compose.observability.yml -f docker-compose.monitoring.yml -f docker-compose.network.yml -f docker-compose.apps.yml -f docker-compose.mqtt.yml -f docker-compose.ci.yml down
 	@echo "✅ All services stopped"
 
 clean-volumes: ## Remove all volumes (WARNING: Data loss!)
 	@echo "⚠️  WARNING: This will remove all data volumes!"
 	@read -p "Are you sure? [y/N] " -n 1 -r; echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		docker-compose -f docker-compose.observability.yml -f docker-compose.monitoring.yml -f docker-compose.network.yml -f docker-compose.apps.yml -f docker-compose.mqtt.yml -f docker-compose.ci.yml down -v; \
+		$(COMPOSE) -f docker-compose.observability.yml -f docker-compose.monitoring.yml -f docker-compose.network.yml -f docker-compose.apps.yml -f docker-compose.mqtt.yml -f docker-compose.ci.yml down -v; \
 		echo "✅ All volumes removed"; \
 	else \
 		echo "❌ Operation cancelled"; \
@@ -167,19 +171,23 @@ clean-volumes: ## Remove all volumes (WARNING: Data loss!)
 # Create shared network
 create-network: ## Create shared homelab network
 	@echo "🔗 Creating shared homelab network..."
-	@docker network create homelab 2>/dev/null || echo "Network already exists"
+	@if command -v podman >/dev/null 2>&1; then \
+		podman network create homelab 2>/dev/null || echo "Network already exists"; \
+	else \
+		docker network create homelab 2>/dev/null || echo "Network already exists"; \
+	fi
 	@echo "✅ Homelab network ready"
 
 # Monitoring and logs
 status: ## Show status of all services
 	@echo "📊 Service Status:"
-	@docker-compose -f docker-compose.observability.yml -f docker-compose.monitoring.yml -f docker-compose.network.yml -f docker-compose.apps.yml -f docker-compose.mqtt.yml -f docker-compose.ci.yml ps
+	@$(COMPOSE) -f docker-compose.observability.yml -f docker-compose.monitoring.yml -f docker-compose.network.yml -f docker-compose.apps.yml -f docker-compose.mqtt.yml -f docker-compose.ci.yml ps
 
 logs: ## Show logs for all services (or specific: make logs SERVICE=prometheus)
 ifdef SERVICE
-	@docker-compose -f docker-compose.observability.yml -f docker-compose.monitoring.yml -f docker-compose.network.yml -f docker-compose.apps.yml -f docker-compose.mqtt.yml -f docker-compose.ci.yml logs -f $(SERVICE)
+	@$(COMPOSE) -f docker-compose.observability.yml -f docker-compose.monitoring.yml -f docker-compose.network.yml -f docker-compose.apps.yml -f docker-compose.mqtt.yml -f docker-compose.ci.yml logs -f $(SERVICE)
 else
-	@docker-compose -f docker-compose.observability.yml -f docker-compose.monitoring.yml -f docker-compose.network.yml -f docker-compose.apps.yml -f docker-compose.mqtt.yml -f docker-compose.ci.yml logs -f
+	@$(COMPOSE) -f docker-compose.observability.yml -f docker-compose.monitoring.yml -f docker-compose.network.yml -f docker-compose.apps.yml -f docker-compose.mqtt.yml -f docker-compose.ci.yml logs -f
 endif
 
 # Quick deployment presets
@@ -203,12 +211,12 @@ cicd-dev: create-network observability cicd ## Development environment with CI/C
 # Development helpers
 dev-observability: create-network ## Development mode - observability with live reload
 	@echo "🛠️  Starting observability services in development mode..."
-	@docker-compose -f docker-compose.observability.yml up
+	@$(COMPOSE) -f docker-compose.observability.yml up
 
 dev-rebuild-mqtt: ## Rebuild and restart mqtt-prometheus service
 	@echo "🔨 Rebuilding MQTT-Prometheus service..."
-	@docker-compose -f docker-compose.mqtt.yml build mqtt-prometheus
-	@docker-compose -f docker-compose.mqtt.yml up -d mqtt-prometheus
+	@$(COMPOSE) -f docker-compose.mqtt.yml build mqtt-prometheus
+	@$(COMPOSE) -f docker-compose.mqtt.yml up -d mqtt-prometheus
 	@echo "✅ MQTT service rebuilt and restarted"
 
 # Update configurations
