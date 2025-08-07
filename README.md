@@ -239,6 +239,25 @@ Full compatibility with:
 - Automated SELinux configuration (`make setup-selinux`)
 - Automated firewall configuration (`make setup-firewall`)
 - Podman socket for container monitoring (`make setup-podman`)
+- Remote control via SSH with key authentication
+
+### Podman Remote Setup
+```bash
+# Enable system socket on server for remote access
+sudo systemctl enable --now podman.socket
+
+# Set up SSH key authentication (on client)
+ssh-copy-id username@server-ip
+
+# Add remote connection with explicit SSH key
+podman system connection add homelab-server \
+  --identity ~/.ssh/id_rsa \
+  ssh://username@server-ip/run/user/1000/podman/podman.sock
+
+# Set as default and test
+podman system connection default homelab-server
+podman ps  # Controls remote server containers
+```
 
 ---
 
@@ -314,6 +333,8 @@ make clean && make homelab-complete
 - **Container file access**: Check SELinux contexts with `ls -laZ config-dir/`
 - **Connection refused from network**: Run `make setup-firewall` (CentOS/RHEL only)
 - **Firewall blocking ports**: Check with `sudo firewall-cmd --list-ports`
+- **Podman remote asks for password**: Use `--identity ~/.ssh/id_rsa` when adding connection
+- **Remote connection fails**: Ensure SSH keys are set up with `ssh-copy-id username@server`
 
 ---
 
