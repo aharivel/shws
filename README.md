@@ -238,6 +238,7 @@ Full compatibility with:
 - Restart policies optimized for Podman
 - Automated SELinux configuration (`make setup-selinux`)
 - Automated firewall configuration (`make setup-firewall`)
+- Podman socket for container monitoring (`make setup-podman`)
 
 ---
 

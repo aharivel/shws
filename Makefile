@@ -54,7 +54,7 @@ network: create-network ## Add network services (Pi-hole + Nginx Proxy Manager)
 	@echo "   - Pi-hole DNS: localhost:5053 (SAFE: avoids system DNS on 53)"
 	@echo "   - Nginx Proxy: http://localhost:8084 (SAFE: avoids LVDA on 8080)"
 
-apps: create-network setup-selinux setup-firewall ## Add application services (Glance dashboard)
+apps: create-network setup-selinux setup-firewall setup-podman ## Add application services (Glance dashboard)
 	@echo "📱 Adding application services..."
 	@$(COMPOSE) -f docker-compose.apps.yml up -d
 	@echo "✅ Application services running:"
@@ -207,6 +207,25 @@ setup-firewall: ## Configure firewall for homelab service ports (CentOS/RHEL)
 		fi; \
 	else \
 		echo "   - Firewalld not found, likely not CentOS/RHEL - skipping"; \
+	fi
+
+setup-podman: ## Enable Podman socket for container monitoring
+	@echo "🐳 Configuring Podman socket for container monitoring..."
+	@if command -v podman >/dev/null 2>&1; then \
+		echo "   - Enabling user Podman socket..."; \
+		systemctl --user enable --now podman.socket 2>/dev/null || true; \
+		if [ -S "/run/user/$$(id -u)/podman/podman.sock" ]; then \
+			echo "   - User socket available at: /run/user/$$(id -u)/podman/podman.sock"; \
+		fi; \
+		echo "   - Testing socket connectivity..."; \
+		if curl -s --unix-socket "/run/user/$$(id -u)/podman/podman.sock" http://localhost/v1.0.0/libpod/info >/dev/null 2>&1; then \
+			echo "   - Socket API working correctly"; \
+		else \
+			echo "   - Socket API test failed, but socket is enabled"; \
+		fi; \
+		echo "✅ Podman socket configured for container monitoring"; \
+	else \
+		echo "   - Podman not found - skipping socket setup"; \
 	fi
 
 clean: ## Stop and remove all containers

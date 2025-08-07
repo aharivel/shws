@@ -9,7 +9,7 @@ services:
     user: "1000:1000"  # Run as current user to avoid permission issues
     volumes:
       - ./glance-config:/app/config:ro
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ${XDG_RUNTIME_DIR:-/run/user/${UID:-1000}}/podman/podman.sock:/var/run/docker.sock
     ports:
       - "8085:8080"  # SAFE: Avoid conflict with LVDA on 8080
     networks:
