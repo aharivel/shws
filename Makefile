@@ -31,7 +31,7 @@ help: ## Show this help message
 	@echo "  GitLab:        http://localhost:8086  | http://$(shell ip route | grep default | awk '{print $$9}' | head -1):8086  (SAFE: 8080 avoided)"
 
 # Core homelab stacks
-observability: ## Start observability stack (Prometheus + Grafana + Perses)
+observability: setup-selinux ## Start observability stack (Prometheus + Grafana + Perses)
 	@echo "📊 Starting observability stack..."
 	@$(COMPOSE) -f docker-compose.observability.yml up -d
 	@echo "✅ Observability services running:"
@@ -54,7 +54,7 @@ network: create-network ## Add network services (Pi-hole + Nginx Proxy Manager)
 	@echo "   - Pi-hole DNS: localhost:5053 (SAFE: avoids system DNS on 53)"
 	@echo "   - Nginx Proxy: http://localhost:8084 (SAFE: avoids LVDA on 8080)"
 
-apps: create-network ## Add application services (Glance dashboard)
+apps: create-network setup-selinux ## Add application services (Glance dashboard)
 	@echo "📱 Adding application services..."
 	@$(COMPOSE) -f docker-compose.apps.yml up -d
 	@echo "✅ Application services running:"
@@ -152,6 +152,27 @@ setup-usb: ## Configure USB storage and update fstab
 	@echo "💾 Setting up USB storage..."
 	@sudo ./scripts/setup-usb-storage.sh
 	@echo "✅ USB storage configured and mounted"
+
+setup-selinux: ## Configure SELinux for container file access (CentOS/RHEL)
+	@echo "🔒 Configuring SELinux for container access..."
+	@if command -v getenforce >/dev/null 2>&1; then \
+		if [ "$$(getenforce)" = "Enforcing" ] || [ "$$(getenforce)" = "Permissive" ]; then \
+			echo "   - Setting container SELinux contexts..."; \
+			sudo chcon -Rt container_file_t glance-config/ 2>/dev/null || true; \
+			sudo chcon -Rt container_file_t prometheus/ 2>/dev/null || true; \
+			sudo chcon -Rt container_file_t provisioning/ 2>/dev/null || true; \
+			sudo chcon -Rt container_file_t mqtt/ 2>/dev/null || true; \
+			sudo chcon -Rt container_file_t nginx/ 2>/dev/null || true; \
+			sudo chcon -Rt container_file_t scripts/ 2>/dev/null || true; \
+			echo "   - Enabling container management..."; \
+			sudo setsebool -P container_manage_cgroup true 2>/dev/null || true; \
+			echo "✅ SELinux configured for containers"; \
+		else \
+			echo "   - SELinux is disabled, no configuration needed"; \
+		fi; \
+	else \
+		echo "   - SELinux not found, likely not CentOS/RHEL - skipping"; \
+	fi
 
 clean: ## Stop and remove all containers
 	@echo "🧹 Cleaning up all services..."

@@ -236,6 +236,7 @@ Full compatibility with:
 - Container storage paths (`/var/lib/containers/`)
 - Network bridge configuration
 - Restart policies optimized for Podman
+- Automated SELinux configuration (`make setup-selinux`)
 
 ---
 
@@ -307,6 +308,8 @@ make clean && make homelab-complete
 - **Network issues**: Services use shared `homelab` network
 - **GitLab slow start**: Initial startup takes 5-10 minutes, use `make gitlab-setup` to wait
 - **Runner registration**: Get token from GitLab admin panel before running setup script
+- **SELinux permission denied**: Run `make setup-selinux` (CentOS/RHEL only)
+- **Container file access**: Check SELinux contexts with `ls -laZ config-dir/`
 
 ---
 
