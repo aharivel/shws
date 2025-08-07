@@ -6,8 +6,9 @@ services:
     container_name: glance
     image: glanceapp/glance
     restart: always
+    user: "1000:1000"  # Run as current user to avoid permission issues
     volumes:
-      - ./glance-config:/app/config
+      - ./glance-config:/app/config:ro
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "8085:8080"  # SAFE: Avoid conflict with LVDA on 8080
