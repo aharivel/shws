@@ -31,7 +31,7 @@ help: ## Show this help message
 	@echo "  GitLab:        http://localhost:8086  | http://$(shell ip route | grep default | awk '{print $$9}' | head -1):8086  (SAFE: 8080 avoided)"
 
 # Core homelab stacks
-observability: setup-selinux ## Start observability stack (Prometheus + Grafana + Perses)
+observability: setup-selinux setup-firewall ## Start observability stack (Prometheus + Grafana + Perses)
 	@echo "📊 Starting observability stack..."
 	@$(COMPOSE) -f docker-compose.observability.yml up -d
 	@echo "✅ Observability services running:"
@@ -54,7 +54,7 @@ network: create-network ## Add network services (Pi-hole + Nginx Proxy Manager)
 	@echo "   - Pi-hole DNS: localhost:5053 (SAFE: avoids system DNS on 53)"
 	@echo "   - Nginx Proxy: http://localhost:8084 (SAFE: avoids LVDA on 8080)"
 
-apps: create-network setup-selinux ## Add application services (Glance dashboard)
+apps: create-network setup-selinux setup-firewall ## Add application services (Glance dashboard)
 	@echo "📱 Adding application services..."
 	@$(COMPOSE) -f docker-compose.apps.yml up -d
 	@echo "✅ Application services running:"
@@ -172,6 +172,41 @@ setup-selinux: ## Configure SELinux for container file access (CentOS/RHEL)
 		fi; \
 	else \
 		echo "   - SELinux not found, likely not CentOS/RHEL - skipping"; \
+	fi
+
+setup-firewall: ## Configure firewall for homelab service ports (CentOS/RHEL)
+	@echo "🔥 Configuring firewall for homelab services..."
+	@if command -v firewall-cmd >/dev/null 2>&1; then \
+		if sudo firewall-cmd --state >/dev/null 2>&1; then \
+			echo "   - Adding core service ports..."; \
+			sudo firewall-cmd --permanent --add-port=3005/tcp 2>/dev/null || true; \
+			sudo firewall-cmd --permanent --add-port=9090/tcp 2>/dev/null || true; \
+			sudo firewall-cmd --permanent --add-port=8082/tcp 2>/dev/null || true; \
+			echo "   - Adding monitoring ports..."; \
+			sudo firewall-cmd --permanent --add-port=8081/tcp 2>/dev/null || true; \
+			sudo firewall-cmd --permanent --add-port=9100/tcp 2>/dev/null || true; \
+			echo "   - Adding network service ports..."; \
+			sudo firewall-cmd --permanent --add-port=8083/tcp 2>/dev/null || true; \
+			sudo firewall-cmd --permanent --add-port=8084/tcp 2>/dev/null || true; \
+			sudo firewall-cmd --permanent --add-port=5053/tcp 2>/dev/null || true; \
+			sudo firewall-cmd --permanent --add-port=5053/udp 2>/dev/null || true; \
+			echo "   - Adding application ports..."; \
+			sudo firewall-cmd --permanent --add-port=8085/tcp 2>/dev/null || true; \
+			echo "   - Adding CI/CD ports..."; \
+			sudo firewall-cmd --permanent --add-port=8086/tcp 2>/dev/null || true; \
+			sudo firewall-cmd --permanent --add-port=2222/tcp 2>/dev/null || true; \
+			sudo firewall-cmd --permanent --add-port=4433/tcp 2>/dev/null || true; \
+			echo "   - Adding IoT ports..."; \
+			sudo firewall-cmd --permanent --add-port=1883/tcp 2>/dev/null || true; \
+			sudo firewall-cmd --permanent --add-port=8888/tcp 2>/dev/null || true; \
+			echo "   - Reloading firewall..."; \
+			sudo firewall-cmd --reload; \
+			echo "✅ Firewall configured for all homelab services"; \
+		else \
+			echo "   - Firewall service not running - skipping"; \
+		fi; \
+	else \
+		echo "   - Firewalld not found, likely not CentOS/RHEL - skipping"; \
 	fi
 
 clean: ## Stop and remove all containers

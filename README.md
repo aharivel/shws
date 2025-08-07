@@ -237,6 +237,7 @@ Full compatibility with:
 - Network bridge configuration
 - Restart policies optimized for Podman
 - Automated SELinux configuration (`make setup-selinux`)
+- Automated firewall configuration (`make setup-firewall`)
 
 ---
 
@@ -310,6 +311,8 @@ make clean && make homelab-complete
 - **Runner registration**: Get token from GitLab admin panel before running setup script
 - **SELinux permission denied**: Run `make setup-selinux` (CentOS/RHEL only)
 - **Container file access**: Check SELinux contexts with `ls -laZ config-dir/`
+- **Connection refused from network**: Run `make setup-firewall` (CentOS/RHEL only)
+- **Firewall blocking ports**: Check with `sudo firewall-cmd --list-ports`
 
 ---
 
