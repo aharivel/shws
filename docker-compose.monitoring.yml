@@ -38,8 +38,6 @@ services:
     volumes:
       - '/:/host:ro,rslave'
 
-volumes:
-
 networks:
   homelab:
     external: true
