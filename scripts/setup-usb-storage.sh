@@ -159,6 +159,9 @@ create_directory_structure() {
     chown -R 1000:1000 "$PROMETHEUS_DATA_DIR"
     chmod -R 755 "$PROMETHEUS_DATA_DIR"
     
+    # Ensure Prometheus data directory is writable for queries.active and other temp files
+    chmod 777 "$PROMETHEUS_DATA_DIR/prometheus" 2>/dev/null || true
+    
     # Set general permissions
     chmod 755 "$BACKUP_DIR"
     
