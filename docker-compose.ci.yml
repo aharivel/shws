@@ -29,7 +29,6 @@ services:
         redis_exporter['enable'] = false
         postgres_exporter['enable'] = false
         gitlab_exporter['enable'] = false
-        grafana['enable'] = false
         # Performance optimizations for experimentation
         postgresql['shared_buffers'] = "128MB"
         postgresql['max_worker_processes'] = "2"
