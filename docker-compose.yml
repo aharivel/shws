@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   mqtt-server:
-    image: mochimqtt/server
+    image: docker.io/mochimqtt/server
     container_name: mqtt-server
     ports:
       - "1883:1883"
@@ -71,7 +71,7 @@ services:
       - '/:/host:ro,rslave'
 
   prometheus:
-    image: prom/prometheus
+    image: docker.io/prom/prometheus
     user: "1000:1000"
     container_name: prometheus
     networks:
@@ -85,7 +85,7 @@ services:
     restart: always
 
   grafana:
-    image: grafana/grafana
+    image: docker.io/grafana/grafana
     container_name: grafana
     ports:
       - "3005:3000"
@@ -100,7 +100,7 @@ services:
       - prometheus
 
   nginxproxymanager:
-    image: 'jc21/nginx-proxy-manager:latest'
+    image: 'docker.io/jc21/nginx-proxy-manager:latest'
     container_name: nginxproxymanager
     restart: unless-stopped
     ports:
@@ -115,7 +115,7 @@ services:
 
   glance:
     container_name: glance
-    image: glanceapp/glance
+    image: docker.io/glanceapp/glance
     restart: unless-stopped
     volumes:
       - ./glance-config:/app/config

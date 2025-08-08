@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  portainer:
+    image: docker.io/portainer/portainer-ce:latest
+    container_name: test-portainer
+    ports:
+      - "9000:9000"
+    volumes:
+      - /run/user/1000/podman/podman.sock:/var/run/docker.sock
+    restart: always

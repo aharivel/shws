@@ -3,7 +3,7 @@ version: '3.8'
 # Weather Station / IoT MQTT Components
 services:
   mqtt-server:
-    image: mochimqtt/server
+    image: docker.io/mochimqtt/server
     container_name: mqtt-server
     ports:
       - "1883:1883"

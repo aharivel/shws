@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   gitlab:
-    image: gitlab/gitlab-ce:latest
+    image: docker.io/gitlab/gitlab-ce:latest
     container_name: gitlab-ce
     hostname: gitlab.local
     ports:
@@ -45,7 +45,7 @@ services:
       start_period: 10m
 
   gitlab-runner:
-    image: gitlab/gitlab-runner:latest
+    image: docker.io/gitlab/gitlab-runner:latest
     container_name: gitlab-runner-1
     networks:
       - cicd
@@ -61,7 +61,7 @@ services:
     
   # Optional: Additional runner for parallel jobs
   gitlab-runner-2:
-    image: gitlab/gitlab-runner:latest
+    image: docker.io/gitlab/gitlab-runner:latest
     container_name: gitlab-runner-2
     networks:
       - cicd
@@ -79,7 +79,7 @@ services:
     
   # Optional: Redis cache for GitLab Runner (shared cache)
   gitlab-runner-cache:
-    image: redis:7-alpine
+    image: docker.io/redis:7-alpine
     container_name: gitlab-runner-cache
     networks:
       - cicd

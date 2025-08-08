@@ -4,7 +4,7 @@ services:
   # Pi-hole DNS Server with SAFE port assignments
   pihole:
     container_name: pihole
-    image: pihole/pihole:latest
+    image: docker.io/pihole/pihole:latest
     ports:
       - "5053:53/tcp"      # SAFE: Custom DNS port to avoid system conflict
       - "5053:53/udp"      # SAFE: Custom DNS port to avoid system conflict  
@@ -25,7 +25,7 @@ services:
 
   # Nginx Proxy Manager for reverse proxy
   nginxproxymanager:
-    image: 'jc21/nginx-proxy-manager:latest'
+    image: 'docker.io/jc21/nginx-proxy-manager:latest'
     container_name: nginxproxymanager
     restart: always
     ports:
