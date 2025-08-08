@@ -1,49 +1,84 @@
 version: '3.8'
 
 services:
+  postgresql:
+    image: docker.io/sameersbn/postgresql:12-20200524
+    container_name: gitlab-postgresql
+    environment:
+      - DB_NAME=gitlabhq_production
+      - DB_USER=gitlab
+      - DB_PASS=password
+      - DB_EXTENSION=pg_trgm,btree_gist
+    volumes:
+      - gitlab-postgresql-data:/var/lib/postgresql
+    networks:
+      - cicd
+    restart: always
+
+  redis:
+    image: docker.io/redis:7.4-alpine
+    container_name: gitlab-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - gitlab-redis-data:/data
+    networks:
+      - cicd
+    restart: always
+
   gitlab:
-    image: docker.io/gitlab/gitlab-ce:latest
+    image: docker.io/sameersbn/gitlab:18.2.1
     container_name: gitlab-ce
-    hostname: gitlab.local
+    depends_on:
+      - redis
+      - postgresql
     ports:
       - "8086:80"      # SAFE: Avoids LVDA on 8080
-      - "4433:443"     # HTTPS
       - "2222:22"      # SSH Git operations
     networks:
       - cicd
-    volumes:
-      - gitlab-config:/etc/gitlab
-      - gitlab-logs:/var/log/gitlab
-      - gitlab-data:/var/opt/gitlab
     environment:
-      GITLAB_OMNIBUS_CONFIG: |
-        external_url 'http://gitlab:8086'
-        nginx['listen_port'] = 8086
-        nginx['listen_addresses'] = ['*']
-        gitlab_rails['gitlab_shell_ssh_port'] = 2222
-        gitlab_rails['initial_root_password'] = 'initialpassword123'
-        gitlab_rails['gitlab_signup_enabled'] = false
-        gitlab_rails['time_zone'] = 'UTC'
-        # Disable heavy monitoring features (we have our own stack)
-        prometheus_monitoring['enable'] = false
-        alertmanager['enable'] = false
-        node_exporter['enable'] = false
-        redis_exporter['enable'] = false
-        postgres_exporter['enable'] = false
-        gitlab_exporter['enable'] = false
-        # Performance optimizations for experimentation
-        postgresql['shared_buffers'] = "128MB"
-        postgresql['max_worker_processes'] = "2"
-        puma['worker_processes'] = 2
-        sidekiq['max_concurrency'] = 5
+      - DEBUG=false
+      
+      - DB_ADAPTER=postgresql
+      - DB_HOST=postgresql
+      - DB_PORT=5432
+      - DB_NAME=gitlabhq_production
+      - DB_USER=gitlab
+      - DB_PASS=password
+      
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      
+      - TZ=Europe/Paris
+      - GITLAB_TIMEZONE=Paris
+      
+      - GITLAB_HTTPS=false
+      - SSL_SELF_SIGNED=false
+      
+      - GITLAB_HOST=192.168.1.74
+      - GITLAB_PORT=8086
+      - GITLAB_SSH_PORT=2222
+      
+      - GITLAB_SECRETS_DB_KEY_BASE=long-and-random-alphanumeric-string-db
+      - GITLAB_SECRETS_SECRET_KEY_BASE=long-and-random-alphanumeric-string-secret
+      - GITLAB_SECRETS_OTP_KEY_BASE=long-and-random-alphanumeric-string-otp
+      
+      - GITLAB_ROOT_PASSWORD=initialpassword123
+      - GITLAB_ROOT_EMAIL=admin@example.com
+      
+      - GITLAB_NOTIFY_ON_BROKEN_BUILDS=true
+      - GITLAB_NOTIFY_PUSHER=false
+      
+      - GITLAB_EMAIL=admin@example.com
+      - GITLAB_EMAIL_REPLY_TO=noreply@example.com
+      - GITLAB_INCOMING_EMAIL_ADDRESS=reply@example.com
+      
+      - GITLAB_BACKUP_SCHEDULE=daily
+      - GITLAB_BACKUP_TIME=01:00
+      
+    volumes:
+      - gitlab-data:/home/git/data
     restart: always
-    shm_size: '256m'
-    healthcheck:
-      test: ["CMD-SHELL", "gitlab-healthcheck --fail --max-time 10"]
-      interval: 60s
-      timeout: 30s
-      retries: 5
-      start_period: 10m
 
   gitlab-runner:
     image: docker.io/gitlab/gitlab-runner:latest
@@ -57,48 +92,16 @@ services:
       - DOCKER_HOST=unix:///var/run/docker.sock
     restart: always
     depends_on:
-      gitlab:
-        condition: service_healthy
-    
-  # Optional: Additional runner for parallel jobs
-  gitlab-runner-2:
-    image: docker.io/gitlab/gitlab-runner:latest
-    container_name: gitlab-runner-2
-    networks:
-      - cicd
-    volumes:
-      - gitlab-runner-2-config:/etc/gitlab-runner
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - DOCKER_HOST=unix:///var/run/docker.sock
-    restart: always
-    depends_on:
-      gitlab:
-        condition: service_healthy
-    profiles:
-      - multi-runner
-    
-  # Optional: Redis cache for GitLab Runner (shared cache)
-  gitlab-runner-cache:
-    image: docker.io/redis:7-alpine
-    container_name: gitlab-runner-cache
-    networks:
-      - cicd
-    restart: always
-    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
-    profiles:
-      - cache
+      - gitlab
 
 volumes:
-  gitlab-config:
+  gitlab-postgresql-data:
     driver: local
-  gitlab-logs:
+  gitlab-redis-data:
     driver: local
   gitlab-data:
     driver: local
   gitlab-runner-config:
-    driver: local
-  gitlab-runner-2-config:
     driver: local
 
 networks:
