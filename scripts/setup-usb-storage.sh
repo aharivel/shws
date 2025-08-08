@@ -181,7 +181,13 @@ update_fstab() {
     fi
     
     # Add new fstab entry
-    FSTAB_ENTRY="UUID=$USB_UUID $USB_MOUNT_POINT ext4 defaults,nofail,uid=1000,gid=1000 0 2"
+    # Different mount options based on filesystem type
+    FS_TYPE=$(blkid -o value -s TYPE "$SELECTED_DEVICE")
+    if [[ "$FS_TYPE" == "vfat" || "$FS_TYPE" == "fat32" ]]; then
+        FSTAB_ENTRY="UUID=$USB_UUID $USB_MOUNT_POINT $FS_TYPE defaults,nofail,uid=1000,gid=1000,umask=022 0 2"
+    else
+        FSTAB_ENTRY="UUID=$USB_UUID $USB_MOUNT_POINT $FS_TYPE defaults,nofail 0 2"
+    fi
     echo "$FSTAB_ENTRY" >> /etc/fstab
     
     log_success "Added fstab entry:"
