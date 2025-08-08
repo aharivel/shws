@@ -69,7 +69,7 @@ mqtt: ## Add MQTT services for IoT/Weather Station
 	@echo "   - MQTT Metrics: http://localhost:8888"
 
 # CI/CD Services
-cicd: create-network ## Add CI/CD services (GitLab + GitLab Runner)
+cicd: ## Add CI/CD services (GitLab + GitLab Runner)
 	@echo "🚀 Adding CI/CD services (GitLab + Runner)..."
 	@$(COMPOSE) -f docker-compose.ci.yml up -d
 	@echo "✅ CI/CD services running:"
