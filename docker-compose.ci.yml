@@ -17,7 +17,9 @@ services:
       - gitlab-data:/var/opt/gitlab
     environment:
       GITLAB_OMNIBUS_CONFIG: |
-        external_url 'http://192.168.1.74:8086'
+        external_url 'http://gitlab:8086'
+        nginx['listen_port'] = 8086
+        nginx['listen_addresses'] = ['*']
         gitlab_rails['gitlab_shell_ssh_port'] = 2222
         gitlab_rails['initial_root_password'] = 'initialpassword123'
         gitlab_rails['gitlab_signup_enabled'] = false
