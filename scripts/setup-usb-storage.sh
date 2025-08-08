@@ -162,6 +162,15 @@ create_directory_structure() {
     # Ensure Prometheus data directory is writable for queries.active and other temp files
     chmod 777 "$PROMETHEUS_DATA_DIR/prometheus" 2>/dev/null || true
     
+    # Set SELinux context for container access if SELinux is enabled
+    if command -v getenforce >/dev/null 2>&1 && [[ "$(getenforce)" != "Disabled" ]]; then
+        log_info "Setting SELinux contexts for container access..."
+        chcon -Rt container_file_t "$PROMETHEUS_DATA_DIR" 2>/dev/null || true
+        chcon -Rt container_file_t "$BACKUP_DIR" 2>/dev/null || true
+        setsebool -P container_manage_cgroup true 2>/dev/null || true
+        log_success "SELinux contexts configured for containers"
+    fi
+    
     # Set general permissions
     chmod 755 "$BACKUP_DIR"
     
